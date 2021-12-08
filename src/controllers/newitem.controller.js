@@ -2,7 +2,7 @@ const User = require("../models/newitem.model");
 const express = require("express");
 const router = express.Router();
 const authenticate = require("../middleware/authentication");
-const authorise = require("../middleware/authorise");
+const { authorise, userauthorise } = require("../middleware/authorise");
 router.post(
   "/",
   authenticate,
@@ -24,38 +24,54 @@ router.post(
 );
 router.get("/", async (req, res) => {
   try {
-    const newitem = await User.find().lean().exec();
+    const newitem = await User.find().populate("user").lean().exec();
     return res.status(201).send(newitem);
   } catch (e) {
     return res.status(500).json({ message: e.message, status: "Failed" });
   }
 });
-router.get("/:id", async (req, res) => {
-  try {
-    const newitem = await User.findById(req.params.id).lean().exec();
-    return res.status(201).send(newitem);
-  } catch (e) {
-    return res.status(500).json({ message: e.message, status: "Failed" });
+router.get(
+  "/:id",
+  authenticate,
+  authorise(["seller", "admin"]),
+  async (req, res) => {
+    try {
+      const newitem = await User.findById(req.params.id).lean().exec();
+      return res.status(201).send(newitem);
+    } catch (e) {
+      return res.status(500).json({ message: e.message, status: "Failed" });
+    }
   }
-});
-router.patch("/:id", async (req, res) => {
-  try {
-    const newitem = await User.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-    })
-      .lean()
-      .exec();
-    return res.status(201).send(newitem);
-  } catch (e) {
-    return res.status(500).json({ message: e.message, status: "Failed" });
+);
+router.patch(
+  "/:id",
+  authenticate,
+  authorise(["seller", "admin"]),
+  async (req, res) => {
+    try {
+      const newitem = await User.findByIdAndUpdate(req.params.id, req.body, {
+        new: true,
+      })
+        .lean()
+        .exec();
+      return res.status(201).send(newitem);
+    } catch (e) {
+      return res.status(500).json({ message: e.message, status: "Failed" });
+    }
   }
-});
-router.delete("/:id", async (req, res) => {
-  try {
-    const newitem = await User.findByIdAndDelete(req.params.id).lean().exec();
-    return res.status(201).send(newitem);
-  } catch (e) {
-    return res.status(500).json({ message: e.message, status: "Failed" });
+);
+router.delete(
+  "/:id",
+  authenticate,
+  authorise(["seller", "admin"]),
+  async (req, res) => {
+    try {
+      const newitem = await User.findByIdAndDelete(req.params.id).lean().exec();
+
+      return res.status(201).send(newitem);
+    } catch (e) {
+      return res.status(500).json({ message: e.message, status: "Failed" });
+    }
   }
-});
+);
 module.exports = router;
